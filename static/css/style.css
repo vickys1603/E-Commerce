@@ -1,0 +1,9 @@
+body {
+    padding-top: 70px; /* Adjust for fixed navbar if used */
+    background-color: #f8f9fa;
+}
+
+.card-img-top {
+    object-fit: cover;
+    height: 200px; /* Consistent height for product images */
+}

@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Your Cart - MyStore{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Your Shopping Cart</h1>
+
+{% if cart_items %}
+<div class="table-responsive">
+    <table class="table table-bordered table-hover">
+        <thead class="table-light">
+            <tr>
+                <th>Product</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Total</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="cart-items-body">
+            {% for item in cart_items %}
+            <tr id="cart-item-{{ item.id }}">
+                <td>
+                    <a href="{% url 'product_detail' item.product.id %}">{{ item.product.name }}</a>
+                </td>
+                <td>${{ item.product.price|floatformat:2 }}</td>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <button class="btn btn-sm btn-outline-secondary update-quantity-btn" data-item-id="{{ item.id }}" data-action="decrease">-</button>
+                        <span class="mx-2" id="quantity-{{ item.id }}">{{ item.quantity }}</span>
+                        <button class="btn btn-sm btn-outline-secondary update-quantity-btn" data-item-id="{{ item.id }}" data-action="increase">+</button>
+                    </div>
+                </td>
+                <td id="total-price-{{ item.id }}">${{ item.get_total_price|floatformat:2 }}</td>
+                <td>
+                    <button class="btn btn-danger btn-sm update-quantity-btn" data-item-id="{{ item.id }}" data-action="remove">Remove</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <th colspan="3" class="text-end">Grand Total:</th>
+                <th id="grand-total">${{ total_price|floatformat:2 }}</th>
+                <th></th>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+
+<div class="text-end">
+    <a href="{% url 'home' %}" class="btn btn-secondary me-2">Continue Shopping</a>
+    <a href="{% url 'checkout' %}" class="btn btn-primary">Proceed to Checkout</a>
+</div>
+{% else %}
+<p class="alert alert-info">Your cart is empty. <a href="{% url 'home' %}">Start shopping now!</a></p>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const updateCartButtons = document.querySelectorAll('.update-quantity-btn');
+
+        updateCartButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const itemId = this.dataset.itemId;
+                const action = this.dataset.action;
+
+                fetch('{% url "update_cart_item" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: `item_id=${itemId}&action=${action}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.message) {
+                        // Update UI with new cart data
+                        const cartItemsBody = document.getElementById('cart-items-body');
+                        cartItemsBody.innerHTML = ''; // Clear current items
+
+                        let newGrandTotal = 0;
+                        if (data.cart_items && data.cart_items.length > 0) {
+                            data.cart_items.forEach(item => {
+                                const row = `
+                                    <tr id="cart-item-${item.id}">
+                                        <td><a href="/products/${item.product_id}/">${item.product_name}</a></td>
+                                        <td>$${parseFloat(item.price).toFixed(2)}</td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <button class="btn btn-sm btn-outline-secondary update-quantity-btn" data-item-id="${item.id}" data-action="decrease">-</button>
+                                                <span class="mx-2" id="quantity-${item.id}">${item.quantity}</span>
+                                                <button class="btn btn-sm btn-outline-secondary update-quantity-btn" data-item-id="${item.id}" data-action="increase">+</button>
+                                            </div>
+                                        </td>
+                                        <td id="total-price-${item.id}">$${parseFloat(item.total_price).toFixed(2)}</td>
+                                        <td>
+                                            <button class="btn btn-danger btn-sm update-quantity-btn" data-item-id="${item.id}" data-action="remove">Remove</button>
+                                        </td>
+                                    </tr>
+                                `;
+                                cartItemsBody.insertAdjacentHTML('beforeend', row);
+                                newGrandTotal += parseFloat(item.total_price);
+                            });
+                        } else {
+                            // Cart is empty, show message
+                            const parentContainer = cartItemsBody.closest('.table-responsive').parentElement;
+                            parentContainer.innerHTML = `<p class="alert alert-info">Your cart is empty. <a href="{% url 'home' %}">Start shopping now!</a></p>`;
+                        }
+                        
+                        document.getElementById('grand-total').innerText = `$${newGrandTotal.toFixed(2)}`;
+                        // Re-attach event listeners to new buttons
+                        attachUpdateCartListeners();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error updating cart.');
+                });
+            });
+        });
+
+        function attachUpdateCartListeners() {
+            const newUpdateCartButtons = document.querySelectorAll('.update-quantity-btn');
+            newUpdateCartButtons.forEach(button => {
+                button.removeEventListener('click', null); // Remove old listeners to prevent duplicates
+                button.addEventListener('click', function() {
+                    const itemId = this.dataset.itemId;
+                    const action = this.dataset.action;
+                    // Trigger the fetch call again
+                    fetch('{% url "update_cart_item" %}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-CSRFToken': getCookie('csrftoken'),
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: `item_id=${itemId}&action=${action}`
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.message) {
+                            const cartItemsBody = document.getElementById('cart-items-body');
+                            cartItemsBody.innerHTML = ''; // Clear current items
+
+                            let newGrandTotal = 0;
+                            if (data.cart_items && data.cart_items.length > 0) {
+                                data.cart_items.forEach(item => {
+                                    const row = `
+                                        <tr id="cart-item-${item.id}">
+                                            <td><a href="/products/${item.product_id}/">${item.product_name}</a></td>
+                                            <td>$${parseFloat(item.price).toFixed(2)}</td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <button class="btn btn-sm btn-outline-secondary update-quantity-btn" data-item-id="${item.id}" data-action="decrease">-</button>
+                                                    <span class="mx-2" id="quantity-${item.id}">${item.quantity}</span>
+                                                    <button class="btn btn-sm btn-outline-secondary update-quantity-btn" data-item-id="${item.id}" data-action="increase">+</button>
+                                                </div>
+                                            </td>
+                                            <td id="total-price-${item.id}">$${parseFloat(item.total_price).toFixed(2)}</td>
+                                            <td>
+                                                <button class="btn btn-danger btn-sm update-quantity-btn" data-item-id="${item.id}" data-action="remove">Remove</button>
+                                            </td>
+                                        </tr>
+                                    `;
+                                    cartItemsBody.insertAdjacentHTML('beforeend', row);
+                                    newGrandTotal += parseFloat(item.total_price);
+                                });
+                            } else {
+                                const parentContainer = cartItemsBody.closest('.table-responsive').parentElement;
+                                parentContainer.innerHTML = `<p class="alert alert-info">Your cart is empty. <a href="{% url 'home' %}">Start shopping now!</a></p>`;
+                            }
+                            
+                            document.getElementById('grand-total').innerText = `$${newGrandTotal.toFixed(2)}`;
+                            attachUpdateCartListeners(); // Re-attach for new elements
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Error updating cart.');
+                    });
+                });
+            });
+        }
+        
+        // Function to get CSRF token from cookies (same as in home.html)
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    });
+</script>
+{% endblock %}

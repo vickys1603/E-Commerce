@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Commerce App (Client-Side Simulation)</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+
+    <style>
+        /* General Body Styles */
+        
+        body {
+            padding-top: 70px;
+            /* Space for fixed navbar */
+            background-color: #f8f9fa;
+        }
+        /* Navbar Styling */
+        
+        .navbar {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, .05);
+        }
+        /* Page/Section Hiding */
+        
+        .page-section {
+            display: none;
+            /* All pages hidden by default, JS shows one */
+        }
+        /* Product Card Styling */
+        
+        .card-img-top {
+            object-fit: cover;
+            height: 200px;
+        }
+        
+        .card {
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            transition: transform 0.2s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        /* Cart and Checkout Styling */
+        
+        .cart-item-image {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            margin-right: 15px;
+            border-radius: 5px;
+        }
+        
+        .checkout-summary .list-group-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="#" id="nav-home">MyStore (Sim)</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="nav-home-link">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="nav-cart-link">Cart (<span id="cart-count">0</span>)</a>
+                    </li>
+                    <li class="nav-item" id="nav-auth-links">
+                        <a class="nav-link" href="#" id="nav-login-link">Login</a>
+                        <a class="nav-link d-none" href="#" id="nav-logout-link">Logout (<span id="logged-in-user"></span>)</a>
+                        <a class="nav-link" href="#" id="nav-register-link">Register</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="alert alert-info alert-dismissible fade show" role="alert" id="global-messages-alert" style="display:none;">
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <div id="home-page" class="page-section">
+            <h1 class="mb-4">Our Products</h1>
+            <div class="row" id="product-list">
+            </div>
+        </div>
+
+        <div id="product-detail-page" class="page-section">
+            <div class="row">
+                <div class="col-md-6" id="detail-product-image-container">
+                </div>
+                <div class="col-md-6">
+                    <h1 id="detail-product-name"></h1>
+                    <p class="lead" id="detail-product-price"></p>
+                    <p id="detail-product-description"></p>
+                    <p><strong>Available Stock:</strong> <span id="detail-product-stock"></span></p>
+
+                    <div class="mb-3">
+                        <label for="detail-quantity" class="form-label">Quantity:</label>
+                        <input type="number" id="detail-quantity" class="form-control" value="1" min="1" style="width: 100px;">
+                    </div>
+                    <button type="button" class="btn btn-primary" id="add-to-cart-detail-btn">Add to Cart</button>
+                    <button type="button" class="btn btn-secondary ms-2" id="back-to-home-btn">Back to Home</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="login-page" class="page-section">
+            <div class="row justify-content-center mt-5">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header text-center">
+                            <h3>Login</h3>
+                        </div>
+                        <div class="card-body">
+                            <form id="login-form">
+                                <div class="mb-3">
+                                    <label for="login-username" class="form-label">Username:</label>
+                                    <input type="text" class="form-control" id="login-username" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="login-password" class="form-label">Password:</label>
+                                    <input type="password" class="form-control" id="login-password" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100 mt-3">Login</button>
+                            </form>
+                            <p class="text-center mt-3">Don't have an account? <a href="#" id="go-to-register">Register here</a></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="register-page" class="page-section">
+            <div class="row justify-content-center mt-5">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header text-center">
+                            <h3>Register</h3>
+                        </div>
+                        <div class="card-body">
+                            <form id="register-form">
+                                <div class="mb-3">
+                                    <label for="register-username" class="form-label">Username:</label>
+                                    <input type="text" class="form-control" id="register-username" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="register-password" class="form-label">Password:</label>
+                                    <input type="password" class="form-control" id="register-password" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="register-email" class="form-label">Email:</label>
+                                    <input type="email" class="form-control" id="register-email" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100 mt-3">Register</button>
+                            </form>
+                            <p class="text-center mt-3">Already have an account? <a href="#" id="go-to-login">Login here</a></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="cart-page" class="page-section">
+            <h1 class="mb-4">Your Shopping Cart</h1>
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Product</th>
+                            <th>Price</th>
+                            <th>Quantity</th>
+                            <th>Total</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cart-items-body">
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th colspan="3" class="text-end">Grand Total:</th>
+                            <th id="cart-grand-total">$0.00</th>
+                            <th></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            <div class="text-end" id="cart-actions">
+                <a href="#" class="btn btn-secondary me-2" id="continue-shopping-btn">Continue Shopping</a>
+                <button type="button" class="btn btn-primary" id="proceed-to-checkout-btn">Proceed to Checkout</button>
+            </div>
+            <p class="alert alert-info mt-3" id="empty-cart-message" style="display:none;">Your cart is empty. <a href="#" id="empty-cart-shop-link">Start shopping now!</a></p>
+        </div>
+
+        <div id="checkout-page" class="page-section">
+            <h1 class="mb-4">Checkout</h1>
+            <div class="row">
+                <div class="col-md-7">
+                    <h3>Shipping Information</h3>
+                    <form id="checkout-form">
+                        <div class="mb-3">
+                            <label for="checkout-first-name" class="form-label">First Name:</label>
+                            <input type="text" class="form-control" id="checkout-first-name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="checkout-last-name" class="form-label">Last Name:</label>
+                            <input type="text" class="form-control" id="checkout-last-name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="checkout-email" class="form-label">Email:</label>
+                            <input type="email" class="form-control" id="checkout-email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="checkout-address" class="form-label">Address:</label>
+                            <textarea class="form-control" id="checkout-address" rows="3" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="checkout-city" class="form-label">City:</label>
+                            <input type="text" class="form-control" id="checkout-city" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="checkout-postal-code" class="form-label">Postal Code:</label>
+                            <input type="text" class="form-control" id="checkout-postal-code" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="checkout-phone" class="form-label">Phone:</label>
+                            <input type="tel" class="form-control" id="checkout-phone" required>
+                        </div>
+                        <button type="submit" class="btn btn-success btn-lg mt-3">Place Order</button>
+                    </form>
+                </div>
+                <div class="col-md-5">
+                    <div class="card checkout-summary">
+                        <div class="card-header">
+                            <h3>Order Summary</h3>
+                        </div>
+                        <ul class="list-group list-group-flush" id="checkout-order-summary-list">
+                        </ul>
+                        <ul class="list-group list-group-flush mt-2">
+                            <li class="list-group-item d-flex justify-content-between align-items-center list-group-item-info">
+                                <strong>Total:</strong>
+                                <strong id="checkout-summary-total">$0.00</strong>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="order-confirmation-page" class="page-section">
+            <div class="card my-5 shadow-sm">
+                <div class="card-body">
+                    <h1 class="card-title text-success mb-4">Order Confirmed! <i class="bi bi-check-circle-fill"></i></h1>
+                    <p class="card-text lead">Thank you for your purchase. Your order #<strong id="confirm-order-id"></strong> has been placed successfully.</p>
+                    <p class="card-text">A confirmation email has been sent to <strong id="confirm-order-email"></strong>.</p>
+
+                    <hr>
+
+                    <h4 class="mb-3">Order Details:</h4>
+                    <ul class="list-group mb-3">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <strong>Name:</strong>
+                            <span id="confirm-order-name"></span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <strong>Address:</strong>
+                            <span id="confirm-order-address"></span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <strong>Phone:</strong>
+                            <span id="confirm-order-phone"></span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <strong>Order Date:</strong>
+                            <span id="confirm-order-date"></span>
+                        </li>
+                    </ul>
+
+                    <h5 class="mb-3">Items in your order:</h5>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Quantity</th>
+                                    <th>Price</th>
+                                    <th>Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody id="confirm-order-items-body">
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <th colspan="3" class="text-end">Total:</th>
+                                    <th id="confirm-order-total">$0.00</th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <div class="mt-4 text-center">
+                        <a href="#" class="btn btn-primary" id="confirm-continue-shopping-btn">Continue Shopping</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+
+    <script>
+        // --- Global Variables and Initial Data (Simulated) ---
+        const PRODUCTS = [{
+            id: 1,
+            name: "Stylish T-Shirt",
+            description: "Comfortable and trendy cotton t-shirt, perfect for everyday wear.",
+            price: 25.99,
+            stock: 100,
+            imageUrl: "https://via.placeholder.com/300x200/FF5733/FFFFFF?text=T-Shirt"
+        }, {
+            id: 2,
+            name: "Designer Jeans",
+            description: "High-quality denim jeans with a modern fit, designed for durability.",
+            price: 69.99,
+            stock: 50,
+            imageUrl: "https://via.placeholder.com/300x200/3366FF/FFFFFF?text=Jeans"
+        }, {
+            id: 3,
+            name: "Leather Wallet",
+            description: "Genuine leather wallet with multiple card slots and a coin pocket.",
+            price: 35.00,
+            stock: 75,
+            imageUrl: "https://via.placeholder.com/300x200/33FF99/FFFFFF?text=Wallet"
+        }, {
+            id: 4,
+            name: "Smartwatch Pro",
+            description: "Feature-rich smartwatch with health tracking, notifications, and long battery life.",
+            price: 199.50,
+            stock: 30,
+            imageUrl: "https://via.placeholder.com/300x200/FFC300/FFFFFF?text=Smartwatch"
+        }, {
+            id: 5,
+            name: "Wireless Headphones",
+            description: "Over-ear headphones with superior sound quality and noise cancellation.",
+            price: 120.00,
+            stock: 40,
+            imageUrl: "https://via.placeholder.com/300x200/C70039/FFFFFF?text=Headphones"
+        }, ];
+
+        let cart = JSON.parse(localStorage.getItem('cart')) || []; // { productId: 1, quantity: 2 }
+        let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null; // { username: 'test', email: 'test@example.com' }
+        let registeredUsers = JSON.parse(localStorage.getItem('registeredUsers')) || [{
+            username: 'user',
+            password: 'password',
+            email: 'user@example.com'
+        }];
+        let orders = JSON.parse(localStorage.getItem('orders')) || []; // Simulated orders
+
+        let currentPageId = 'home-page'; // Tracks the currently active page
+
+        // --- DOM Elements ---
+        const pageSections = document.querySelectorAll('.page-section');
+        const globalMessagesAlert = document.getElementById('global-messages-alert');
+        const cartCountSpan = document.getElementById('cart-count');
+
+        // Navigation links
+        const navHomeLink = document.getElementById('nav-home-link');
+        const navCartLink = document.getElementById('nav-cart-link');
+        const navLoginLink = document.getElementById('nav-login-link');
+        const navRegisterLink = document.getElementById('nav-register-link');
+        const navLogoutLink = document.getElementById('nav-logout-link');
+        const loggedInUserSpan = document.getElementById('logged-in-user');
+        const navAuthLinksContainer = document.getElementById('nav-auth-links'); // Parent for Login/Logout/Register
+
+        // Home Page elements
+        const productListDiv = document.getElementById('product-list');
+
+        // Product Detail Page elements
+        const productDetailPage = document.getElementById('product-detail-page');
+        const detailProductName = document.getElementById('detail-product-name');
+        const detailProductPrice = document.getElementById('detail-product-price');
+        const detailProductDescription = document.getElementById('detail-product-description');
+        const detailProductStock = document.getElementById('detail-product-stock');
+        const detailProductImageContainer = document.getElementById('detail-product-image-container');
+        const detailQuantityInput = document.getElementById('detail-quantity');
+        const addProductToCartDetailBtn = document.getElementById('add-to-cart-detail-btn');
+        const backToHomeBtn = document.getElementById('back-to-home-btn');
+        let currentProductDetail = null; // Store the product being viewed
+
+        // Login Page elements
+        const loginForm = document.getElementById('login-form');
+        const loginUsernameInput = document.getElementById('login-username');
+        const loginPasswordInput = document.getElementById('login-password');
+        const goToRegisterLink = document.getElementById('go-to-register');
+
+        // Register Page elements
+        const registerForm = document.getElementById('register-form');
+        const registerUsernameInput = document.getElementById('register-username');
+        const registerPasswordInput = document.getElementById('register-password');
+        const registerEmailInput = document.getElementById('register-email');
+        const goToLoginLink = document.getElementById('go-to-login');
+
+        // Cart Page elements
+        const cartItemsBody = document.getElementById('cart-items-body');
+        const cartGrandTotal = document.getElementById('cart-grand-total');
+        const continueShoppingBtn = document.getElementById('continue-shopping-btn');
+        const proceedToCheckoutBtn = document.getElementById('proceed-to-checkout-btn');
+        const emptyCartMessage = document.getElementById('empty-cart-message');
+        const emptyCartShopLink = document.getElementById('empty-cart-shop-link');
+
+        // Checkout Page elements
+        const checkoutForm = document.getElementById('checkout-form');
+        const checkoutFirstName = document.getElementById('checkout-first-name');
+        const checkoutLastName = document.getElementById('checkout-last-name');
+        const checkoutEmail = document.getElementById('checkout-email');
+        const checkoutAddress = document.getElementById('checkout-address');
+        const checkoutCity = document.getElementById('checkout-city');
+        const checkoutPostalCode = document.getElementById('checkout-postal-code');
+        const checkoutPhone = document.getElementById('checkout-phone');
+        const checkoutOrderSummaryList = document.getElementById('checkout-order-summary-list');
+        const checkoutSummaryTotal = document.getElementById('checkout-summary-total');
+
+        // Order Confirmation Page elements
+        const confirmOrderId = document.getElementById('confirm-order-id');
+        const confirmOrderEmail = document.getElementById('confirm-order-email');
+        const confirmOrderName = document.getElementById('confirm-order-name');
+        const confirmOrderAddress = document.getElementById('confirm-order-address');
+        const confirmOrderPhone = document.getElementById('confirm-order-phone');
+        const confirmOrderDate = document.getElementById('confirm-order-date');
+        const confirmOrderItemsBody = document.getElementById('confirm-order-items-body');
+        const confirmOrderTotal = document.getElementById('confirm-order-total');
+        const confirmContinueShoppingBtn = document.getElementById('confirm-continue-shopping-btn');
+
+        // --- Utility Functions ---
+
+        function showMessage(message, type = 'info') {
+            globalMessagesAlert.className = `alert alert-${type} alert-dismissible fade show`;
+            globalMessagesAlert.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>`;
+            globalMessagesAlert.style.display = 'block';
+            setTimeout(() => {
+                globalMessagesAlert.style.display = 'none';
+            }, 5000);
+        }
+
+        function updateCartCountDisplay() {
+            let totalItems = 0;
+            cart.forEach(item => totalItems += item.quantity);
+            cartCountSpan.innerText = totalItems;
+            localStorage.setItem('cart', JSON.stringify(cart));
+        }
+
+        function showPage(pageId, data = null) {
+            pageSections.forEach(section => {
+                section.style.display = 'none';
+            });
+            document.getElementById(pageId).style.display = 'block';
+            currentPageId = pageId; // Update global tracking
+
+            // Render content specific to the page
+            if (pageId === 'home-page') {
+                renderHomePage();
+            } else if (pageId === 'product-detail-page' && data) {
+                renderProductDetailPage(data);
+            } else if (pageId === 'cart-page') {
+                renderCartPage();
+            } else if (pageId === 'checkout-page') {
+                renderCheckoutPage();
+            } else if (pageId === 'order-confirmation-page' && data) {
+                renderOrderConfirmationPage(data);
+            }
+            updateAuthUI(); // Always update auth links when page changes
+        }
+
+        function updateAuthUI() {
+            if (currentUser) {
+                navLoginLink.classList.add('d-none');
+                navRegisterLink.classList.add('d-none');
+                navLogoutLink.classList.remove('d-none');
+                loggedInUserSpan.innerText = currentUser.username;
+            } else {
+                navLoginLink.classList.remove('d-none');
+                navRegisterLink.classList.remove('d-none');
+                navLogoutLink.classList.add('d-none');
+                loggedInUserSpan.innerText = '';
+            }
+        }
+
+        // --- Page Rendering Functions ---
+
+        function renderHomePage() {
+            productListDiv.innerHTML = '';
+            if (PRODUCTS.length === 0) {
+                productListDiv.innerHTML = '<p>No products available yet.</p>';
+                return;
+            }
+
+            PRODUCTS.forEach(product => {
+                const productCard = `
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100">
+                            <img src="${product.imageUrl}" class="card-img-top" alt="${product.name}">
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title">${product.name}</h5>
+                                <p class="card-text">${product.description.substring(0, 100)}${product.description.length > 100 ? '...' : ''}</p>
+                                <p class="card-text"><strong>$${product.price.toFixed(2)}</strong></p>
+                                <div class="mt-auto">
+                                    <button class="btn btn-primary btn-sm view-details-btn" data-product-id="${product.id}">View Details</button>
+                                    <button class="btn btn-success btn-sm add-to-cart-btn" data-product-id="${product.id}">Add to Cart</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                productListDiv.insertAdjacentHTML('beforeend', productCard);
+            });
+
+            // Attach event listeners for dynamic content
+            document.querySelectorAll('.add-to-cart-btn').forEach(button => {
+                button.onclick = (e) => addToCart(parseInt(e.target.dataset.productId), 1);
+            });
+            document.querySelectorAll('.view-details-btn').forEach(button => {
+                button.onclick = (e) => {
+                    const product = PRODUCTS.find(p => p.id === parseInt(e.target.dataset.productId));
+                    showPage('product-detail-page', product);
+                };
+            });
+        }
+
+        function renderProductDetailPage(product) {
+            currentProductDetail = product; // Store for add to cart button
+            detailProductName.innerText = product.name;
+            detailProductPrice.innerText = `$${product.price.toFixed(2)}`;
+            detailProductDescription.innerText = product.description;
+            detailProductStock.innerText = product.stock;
+            detailProductImageContainer.innerHTML = `<img src="${product.imageUrl}" class="img-fluid" alt="${product.name}">`;
+            detailQuantityInput.value = 1; // Reset quantity
+            detailQuantityInput.max = product.stock; // Set max quantity based on stock
+        }
+
+        function renderCartPage() {
+            cartItemsBody.innerHTML = '';
+            let total = 0;
+
+            if (cart.length === 0) {
+                emptyCartMessage.style.display = 'block';
+                document.querySelector('#cart-page .table-responsive').style.display = 'none';
+                document.getElementById('cart-actions').style.display = 'none';
+            } else {
+                emptyCartMessage.style.display = 'none';
+                document.querySelector('#cart-page .table-responsive').style.display = 'block';
+                document.getElementById('cart-actions').style.display = 'flex'; // Use flex for buttons
+
+                cart.forEach(cartItem => {
+                    const product = PRODUCTS.find(p => p.id === cartItem.productId);
+                    if (product) {
+                        const itemTotal = product.price * cartItem.quantity;
+                        total += itemTotal;
+                        const row = `
+                            <tr id="cart-item-${product.id}">
+                                <td>
+                                    <img src="${product.imageUrl}" class="cart-item-image d-none d-md-inline-block">
+                                    <a href="#" class="view-details-btn" data-product-id="${product.id}">${product.name}</a>
+                                </td>
+                                <td>$${product.price.toFixed(2)}</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <button class="btn btn-sm btn-outline-secondary update-cart-quantity-btn" data-item-id="${product.id}" data-action="decrease">-</button>
+                                        <span class="mx-2" id="quantity-${product.id}">${cartItem.quantity}</span>
+                                        <button class="btn btn-sm btn-outline-secondary update-cart-quantity-btn" data-item-id="${product.id}" data-action="increase">+</button>
+                                    </div>
+                                </td>
+                                <td id="total-price-${product.id}">$${itemTotal.toFixed(2)}</td>
+                                <td>
+                                    <button class="btn btn-danger btn-sm remove-from-cart-btn" data-item-id="${product.id}">Remove</button>
+                                </td>
+                            </tr>
+                        `;
+                        cartItemsBody.insertAdjacentHTML('beforeend', row);
+                    }
+                });
+            }
+            cartGrandTotal.innerText = `$${total.toFixed(2)}`;
+            attachCartEventListeners();
+        }
+
+        function renderCheckoutPage() {
+            checkoutOrderSummaryList.innerHTML = '';
+            let total = 0;
+            if (currentUser) {
+                checkoutFirstName.value = currentUser.username; // Pre-fill with dummy user's username
+                checkoutEmail.value = currentUser.email;
+            } else {
+                checkoutFirstName.value = '';
+                checkoutEmail.value = '';
+            }
+            checkoutLastName.value = ''; // Clear other fields
+            checkoutAddress.value = '';
+            checkoutCity.value = '';
+            checkoutPostalCode.value = '';
+            checkoutPhone.value = '';
+
+
+            if (cart.length === 0) {
+                showMessage("Your cart is empty. Please add products before checking out.", 'warning');
+                showPage('cart-page');
+                return;
+            }
+
+            cart.forEach(cartItem => {
+                const product = PRODUCTS.find(p => p.id === cartItem.productId);
+                if (product) {
+                    const itemTotal = product.price * cartItem.quantity;
+                    total += itemTotal;
+                    const listItem = `
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            ${product.name} (x${cartItem.quantity})
+                            <span class="badge bg-primary rounded-pill">$${itemTotal.toFixed(2)}</span>
+                        </li>
+                    `;
+                    checkoutOrderSummaryList.insertAdjacentHTML('beforeend', listItem);
+                }
+            });
+            checkoutSummaryTotal.innerText = `$${total.toFixed(2)}`;
+        }
+
+        function renderOrderConfirmationPage(order) {
+            confirmOrderId.innerText = order.id;
+            confirmOrderEmail.innerText = order.email;
+            confirmOrderName.innerText = `${order.first_name} ${order.last_name}`;
+            confirmOrderAddress.innerText = `${order.address}, ${order.city}, ${order.postal_code}`;
+            confirmOrderPhone.innerText = order.phone;
+            confirmOrderDate.innerText = new Date(order.timestamp).toLocaleString();
+
+            confirmOrderItemsBody.innerHTML = '';
+            let total = 0;
+
+            order.items.forEach(item => {
+                total += item.price * item.quantity;
+                const row = `
+                    <tr>
+                        <td>${item.product_name}</td>
+                        <td>${item.quantity}</td>
+                        <td>$${item.price.toFixed(2)}</td>
+                        <td>$${(item.price * item.quantity).toFixed(2)}</td>
+                    </tr>
+                `;
+                confirmOrderItemsBody.insertAdjacentHTML('beforeend', row);
+            });
+            confirmOrderTotal.innerText = `$${total.toFixed(2)}`;
+        }
+
+
+        // --- Cart Logic ---
+
+        function addToCart(productId, quantity) {
+            const product = PRODUCTS.find(p => p.id === productId);
+            if (!product) {
+                showMessage('Product not found!', 'danger');
+                return;
+            }
+            if (product.stock < quantity) {
+                showMessage(`Not enough stock for ${product.name}. Available: ${product.stock}`, 'danger');
+                return;
+            }
+
+            const existingItem = cart.find(item => item.productId === productId);
+            if (existingItem) {
+                existingItem.quantity += quantity;
+            } else {
+                cart.push({
+                    productId: productId,
+                    quantity: quantity
+                });
+            }
+            showMessage(`"${product.name}" added to cart!`, 'success');
+            updateCartCountDisplay();
+            localStorage.setItem('cart', JSON.stringify(cart)); // Save to localStorage
+        }
+
+        function updateCartItemQuantity(productId, action) {
+            const itemIndex = cart.findIndex(item => item.productId === productId);
+            if (itemIndex === -1) return;
+
+            const product = PRODUCTS.find(p => p.id === productId);
+            if (!product) return; // Should not happen
+
+            if (action === 'increase') {
+                if (cart[itemIndex].quantity < product.stock) {
+                    cart[itemIndex].quantity++;
+                } else {
+                    showMessage(`Cannot add more "${product.name}". Maximum stock reached.`, 'warning');
+                }
+            } else if (action === 'decrease') {
+                cart[itemIndex].quantity--;
+            }
+
+            if (cart[itemIndex].quantity <= 0) {
+                cart.splice(itemIndex, 1); // Remove if quantity is 0 or less
+            }
+
+            showMessage('Cart updated!', 'success');
+            updateCartCountDisplay();
+            renderCartPage(); // Re-render the cart page to reflect changes
+            localStorage.setItem('cart', JSON.stringify(cart)); // Save to localStorage
+        }
+
+        function removeFromCart(productId) {
+            cart = cart.filter(item => item.productId !== productId);
+            showMessage('Product removed from cart!', 'success');
+            updateCartCountDisplay();
+            renderCartPage(); // Re-render the cart page
+            localStorage.setItem('cart', JSON.stringify(cart)); // Save to localStorage
+        }
+
+        // --- Authentication Logic (Simulated) ---
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const username = loginUsernameInput.value;
+            const password = loginPasswordInput.value;
+
+            const user = registeredUsers.find(u => u.username === username && u.password === password);
+
+            if (user) {
+                currentUser = {
+                    username: user.username,
+                    email: user.email
+                }; // Store minimal user data
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                showMessage(`Welcome, ${currentUser.username}!`, 'success');
+                showPage('home-page');
+            } else {
+                showMessage('Invalid username or password.', 'danger');
+            }
+        }
+
+        function handleRegister(e) {
+            e.preventDefault();
+            const username = registerUsernameInput.value;
+            const password = registerPasswordInput.value;
+            const email = registerEmailInput.value;
+
+            if (registeredUsers.some(u => u.username === username)) {
+                showMessage('Username already taken. Please choose another.', 'danger');
+                return;
+            }
+
+            registeredUsers.push({
+                username,
+                password,
+                email
+            });
+            localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
+            showMessage('Registration successful! You can now log in.', 'success');
+            showPage('login-page');
+        }
+
+        function handleLogout() {
+            currentUser = null;
+            localStorage.removeItem('currentUser');
+            showMessage('You have been logged out.', 'info');
+            updateAuthUI();
+            showPage('home-page');
+        }
+
+        // --- Checkout Logic (Simulated) ---
+
+        function handleCheckout(e) {
+            e.preventDefault();
+
+            if (cart.length === 0) {
+                showMessage("Your cart is empty. Please add products before checking out.", 'warning');
+                showPage('cart-page');
+                return;
+            }
+
+            // Basic client-side validation
+            if (!checkoutForm.checkValidity()) {
+                showMessage("Please fill in all required fields.", 'danger');
+                checkoutForm.classList.add('was-validated'); // Show Bootstrap validation feedback
+                return;
+            }
+
+            const orderId = orders.length + 1; // Simple incrementing ID
+            const orderItems = cart.map(cartItem => {
+                const product = PRODUCTS.find(p => p.id === cartItem.productId);
+                return {
+                    product_id: product.id,
+                    product_name: product.name,
+                    price: product.price,
+                    quantity: cartItem.quantity
+                };
+            });
+
+            const newOrder = {
+                id: orderId,
+                user_username: currentUser ? currentUser.username : 'Guest',
+                first_name: checkoutFirstName.value,
+                last_name: checkoutLastName.value,
+                email: checkoutEmail.value,
+                address: checkoutAddress.value,
+                city: checkoutCity.value,
+                postal_code: checkoutPostalCode.value,
+                phone: checkoutPhone.value,
+                items: orderItems,
+                timestamp: new Date().toISOString(),
+                total_cost: orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+            };
+
+            orders.push(newOrder);
+            localStorage.setItem('orders', JSON.stringify(orders)); // Save orders
+
+            // Clear cart after successful checkout
+            cart = [];
+            localStorage.removeItem('cart');
+            updateCartCountDisplay();
+
+            showMessage('Order placed successfully!', 'success');
+            showPage('order-confirmation-page', newOrder);
+            checkoutForm.reset(); // Clear form fields
+            checkoutForm.classList.remove('was-validated');
+        }
+
+
+        // --- Event Listeners ---
+
+        function attachGlobalEventListeners() {
+            navHomeLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                showPage('home-page');
+            });
+            navCartLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                showPage('cart-page');
+            });
+            navLoginLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                showPage('login-page');
+            });
+            navRegisterLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                showPage('register-page');
+            });
+            navLogoutLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                handleLogout();
+            });
+
+            loginForm.addEventListener('submit', handleLogin);
+            registerForm.addEventListener('submit', handleRegister);
+
+            goToRegisterLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                showPage('register-page');
+            });
+            goToLoginLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                showPage('login-page');
+            });
+
+            // Product Detail Page buttons
+            addProductToCartDetailBtn.addEventListener('click', () => {
+                if (currentProductDetail) {
+                    const quantity = parseInt(detailQuantityInput.value);
+                    addToCart(currentProductDetail.id, quantity);
+                }
+            });
+            backToHomeBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                showPage('home-page');
+            });
+
+            // Cart Page buttons
+            continueShoppingBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                showPage('home-page');
+            });
+            proceedToCheckoutBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                showPage('checkout-page');
+            });
+            emptyCartShopLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                showPage('home-page');
+            });
+
+            // Checkout Page form
+            checkoutForm.addEventListener('submit', handleCheckout);
+
+            // Order Confirmation Page button
+            confirmContinueShoppingBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                showPage('home-page');
+            });
+        }
+
+        function attachCartEventListeners() {
+            document.querySelectorAll('.update-cart-quantity-btn').forEach(button => {
+                button.onclick = (e) => updateCartItemQuantity(parseInt(e.target.dataset.itemId), e.target.dataset.action);
+            });
+            document.querySelectorAll('.remove-from-cart-btn').forEach(button => {
+                button.onclick = (e) => removeFromCart(parseInt(e.target.dataset.itemId));
+            });
+            document.querySelectorAll('.view-details-btn').forEach(button => {
+                button.onclick = (e) => {
+                    const product = PRODUCTS.find(p => p.id === parseInt(e.target.dataset.productId));
+                    showPage('product-detail-page', product);
+                };
+            });
+        }
+
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            attachGlobalEventListeners();
+            updateCartCountDisplay();
+            updateAuthUI(); // Set initial login/logout state
+            showPage('home-page'); // Start on the home page
+        });
+    </script>
+</body>
+
+</html>
